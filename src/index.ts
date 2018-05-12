@@ -39,6 +39,14 @@ export function update(gameState: GameState, action: Action): GameState {
                     color: action.color,
                 })],
             };
+        case 'move':
+            return {
+                ...gameState,
+                players: [...gameState.players.filter(player => player.id !== action.id), createPlayer({
+                    id: action.id,
+                    position: action.posiiton,
+                })],
+            };
         case 'leave':
             return {
                 ...gameState,
@@ -60,6 +68,7 @@ export const everyActions: Action['type'][] = [
 export type Action =
     InitAction |
     JoinAction |
+    MoveAction |
     LeaveAction;
 
 export interface InitAction {
@@ -71,6 +80,12 @@ export interface JoinAction {
     type: 'join';
     id: string;
     color: PlayerColor;
+}
+
+export interface MoveAction {
+    type: 'move';
+    id: string;
+    posiiton: Position;
 }
 
 export interface LeaveAction {
