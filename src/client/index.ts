@@ -31,7 +31,8 @@ async function connect(): Promise<[string, WebSocket]> {
 }
 
 async function main() {
-    const app: Application = new Application({ width: 800, height: 600 });
+    const app: Application = new Application({ width: 650, height: 600 });
+    const playerSize: number = 50;
     let gameState: GameState = createGameState({});
     let scene: Graphics;
     const gravity: number = 2;
@@ -66,7 +67,7 @@ async function main() {
 
         for (const player of Object.values(gameState.players)) {
             scene.beginFill(player.color);
-            scene.drawRect(player.position.x, player.position.y, 50, 50);
+            scene.drawRect(player.position.x, player.position.y, playerSize, playerSize);
             scene.endFill();
         }
     }
@@ -81,7 +82,7 @@ async function main() {
         if (!currentPlayer) return;
 
         const speed = 8;
-        const floorY = 500;
+        const floorY = app.screen.height - playerSize * 2;
         const delta = {x: 0, y: 0};
 
         if (keyPressed['ArrowLeft']) {
@@ -98,11 +99,14 @@ async function main() {
         additionalDeltaY += gravity;
         delta.y += additionalDeltaY;
 
-        if (currentPlayer.position.x + delta.x < 0) {
-            delta.x = 0 - currentPlayer.position.x;
+        const leftWallX = 0;
+        const rightWallX = app.screen.width - playerSize;
+
+        if (currentPlayer.position.x + delta.x < leftWallX) {
+            delta.x = leftWallX - currentPlayer.position.x;
         }
-        else if (currentPlayer.position.x + delta.x > 750) {
-            delta.x = 750 - currentPlayer.position.x;
+        else if (currentPlayer.position.x + delta.x > rightWallX) {
+            delta.x = rightWallX - currentPlayer.position.x;
         }
         if (currentPlayer.position.y + delta.y > floorY) {
             delta.y = floorY - currentPlayer.position.y;
