@@ -36,10 +36,12 @@ async function main() {
     let scene: Graphics;
     const keyPressed: {[key: string]: boolean} = {};
     const [ currentPlayerId, ws ] = await connect();
+    console.log(currentPlayerId);
     ws.addEventListener('message', e => {
         const action = JSON.parse(e.data) as Action;
         gameState = update(gameState, action);
     });
+    ws.addEventListener('close', e => console.error(e.code, e.reason));
     document.body.appendChild(app.view);
     app.renderer.backgroundColor = 0xeeeeee;
     PIXI.loader.load(() => {
@@ -68,8 +70,7 @@ async function main() {
 
     function updateGameState(action: Action) {
         gameState = update(gameState, action);
-        // 아 이게 왜 안돼지...
-        // ws.send(JSON.stringify(action));
+        ws.send(JSON.stringify(action));
     }
 
     function handleInput() {
@@ -92,14 +93,16 @@ async function main() {
             delta.y += speed;
         }
 
-        updateGameState({
-            type: 'move',
-            id: currentPlayerId,
-            posiiton: {
-                x: currentPlayer.position.x + delta.x,
-                y: currentPlayer.position.y + delta.y,
-            },
-        })
+        if (delta.x || delta.y) {
+            updateGameState({
+                type: 'move',
+                id: currentPlayerId,
+                posiiton: {
+                    x: currentPlayer.position.x + delta.x,
+                    y: currentPlayer.position.y + delta.y,
+                },
+            });
+        }
     }
 
     function handleKeyDown(e: KeyboardEvent) {

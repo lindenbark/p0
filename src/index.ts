@@ -63,6 +63,7 @@ export const serverOnlyActions: Action['type'][] = [
 
 export const everyActions: Action['type'][] = [
     ...serverOnlyActions,
+    'move',
 ];
 
 export type Action =
