@@ -16,22 +16,17 @@ import {
     IdConnMap,
     broadcast,
 } from './ws-util';
+import { CloseReason } from '../ws';
+import {
+    gameServerPort,
+} from '../ports';
 
-const port = 10001;
-const wss = new WebSocket.Server({ port });
+const wss = new WebSocket.Server({ port: gameServerPort });
 const idConnMap: IdConnMap = new IdConnMap();
 let gameState: GameState = createGameState({});
 
 interface RequestQuery {
     id: string;
-}
-
-// https://www.iana.org/assignments/websocket/websocket.xml#close-code-number
-enum CloseReason {
-    ALREADY_EXIST = 4000,
-    INVALID_MESSAGE,
-    NOT_ALLOWED_ACTION,
-    UNKNOWN_ACTION,
 }
 
 wss.on('connection', (ws, req) => {
@@ -43,7 +38,7 @@ wss.on('connection', (ws, req) => {
         gameState = update(gameState, action);
         broadcast(wss, ws, JSON.stringify(action));
     };
-    doServerAction<JoinAction>({ type: 'join', id: query.id, color: (Math.random() * 0xffffff) | 0 });
+    doServerAction<JoinAction>({ type: 'join', id: query.id, color: (Math.random() * 0xffffff) & 0xefefef });
     ws.send(JSON.stringify({ type: 'init', gameState }));
     ws.on('close', () => {
         const id = idConnMap.id(ws);
@@ -61,4 +56,4 @@ wss.on('connection', (ws, req) => {
     });
 });
 
-console.log(`서버 시작됐습니다: ws://localhost:${ port }`);
+console.log(`서버 시작됐습니다: ws://localhost:${ gameServerPort }`);
