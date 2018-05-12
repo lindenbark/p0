@@ -34,6 +34,9 @@ async function main() {
     const app: Application = new Application({ width: 800, height: 600 });
     let gameState: GameState = createGameState({});
     let scene: Graphics;
+    const gravity: number = 2;
+    let additionalDeltaY: number = 0;
+    let jumping: boolean = false;
     const keyPressed: {[key: string]: boolean} = {};
     const [ currentPlayerId, ws ] = await connect();
     console.log(currentPlayerId);
@@ -57,7 +60,7 @@ async function main() {
     }
 
     function loop(delta: number) {
-        handleInput();
+        handleMove();
 
         scene.clear();
 
@@ -73,11 +76,12 @@ async function main() {
         ws.send(JSON.stringify(action));
     }
 
-    function handleInput() {
+    function handleMove() {
         const currentPlayer = getCurrentPlayer();
         if (!currentPlayer) return;
 
-        const speed = 2;
+        const speed = 8;
+        const floorY = 500;
         const delta = {x: 0, y: 0};
 
         if (keyPressed['ArrowLeft']) {
@@ -86,11 +90,23 @@ async function main() {
         if (keyPressed['ArrowRight']) {
             delta.x += speed;
         }
-        if (keyPressed['ArrowUp']) {
-            delta.y -= speed;
+        if (keyPressed['ArrowUp'] && !jumping) {
+            additionalDeltaY = -25;
+            jumping = true;
         }
-        if (keyPressed['ArrowDown']) {
-            delta.y += speed;
+
+        additionalDeltaY += gravity;
+        delta.y += additionalDeltaY;
+
+        if (currentPlayer.position.x + delta.x < 0) {
+            delta.x = 0 - currentPlayer.position.x;
+        }
+        else if (currentPlayer.position.x + delta.x > 750) {
+            delta.x = 750 - currentPlayer.position.x;
+        }
+        if (currentPlayer.position.y + delta.y > floorY) {
+            delta.y = floorY - currentPlayer.position.y;
+            jumping = false;
         }
 
         if (delta.x || delta.y) {
