@@ -8,7 +8,7 @@ export function broadcast(
     for (let client of wss.clients) {
         if (client.readyState !== WebSocket.OPEN) continue;
         if (ws === client) continue;
-        ws.send(message);
+        ws.send(message, () => { /* ignore error */ });
     }
 }
 
