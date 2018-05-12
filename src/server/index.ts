@@ -26,8 +26,9 @@ interface RequestQuery {
     id: string;
 }
 
+// https://www.iana.org/assignments/websocket/websocket.xml#close-code-number
 enum CloseReason {
-    ALREADY_EXIST,
+    ALREADY_EXIST = 4000,
     INVALID_MESSAGE,
     NOT_ALLOWED_ACTION,
     UNKNOWN_ACTION,
@@ -43,7 +44,7 @@ wss.on('connection', (ws, req) => {
         broadcast(wss, ws, JSON.stringify(action));
     };
     doServerAction<JoinAction>({ type: 'join', id: query.id, color: (Math.random() * 0xffffff) | 0 });
-    ws.send(JSON.stringify(gameState));
+    ws.send(JSON.stringify({ type: 'init', gameState }));
     ws.on('close', () => {
         const id = idConnMap.id(ws);
         if (!id) return;

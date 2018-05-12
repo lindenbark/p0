@@ -26,6 +26,8 @@ export const createGameState = (obj: Partial<GameState>): GameState => ({
 
 export function update(gameState: GameState, action: Action): GameState {
     switch (action.type) {
+        case 'init':
+            return action.gameState;
         case 'join':
             return {
                 ...gameState,
@@ -43,6 +45,7 @@ export function update(gameState: GameState, action: Action): GameState {
 }
 
 export const serverOnlyActions: Action['type'][] = [
+    'init',
     'join',
     'leave',
 ];
@@ -52,8 +55,14 @@ export const everyActions: Action['type'][] = [
 ];
 
 export type Action =
+    InitAction |
     JoinAction |
     LeaveAction;
+
+export interface InitAction {
+    type: 'init';
+    gameState: GameState;
+}
 
 export interface JoinAction {
     type: 'join';
