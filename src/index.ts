@@ -3,22 +3,26 @@ import * as uuid from 'uuid/v4';
 export interface GameEntity {
     id: string; // uuid
 }
-const createGameEntity = (obj: Partial<GameEntity>): GameEntity => ({
+export const createGameEntity = (obj: Partial<GameEntity>): GameEntity => ({
     ...obj,
     id: obj.id || uuid(),
 });
 
+export type PlayerColor = number;
 export interface Player extends GameEntity {
-    color: string;
+    color: PlayerColor;
 }
-const createPlayer = (obj: Partial<Player>): Player => ({
+export const createPlayer = (obj: Partial<Player>): Player => ({
     ...createGameEntity(obj),
-    color: obj.color || '#000',
+    color: obj.color || 0,
 });
 
 export interface GameState {
     players: Player[];
 }
+export const createGameState = (obj: Partial<GameState>): GameState => ({
+    players: obj.players || [],
+});
 
 export function update(gameState: GameState, action: Action): GameState {
     switch (action.type) {
@@ -38,6 +42,15 @@ export function update(gameState: GameState, action: Action): GameState {
     }
 }
 
+export const serverOnlyActions: Action['type'][] = [
+    'join',
+    'leave',
+];
+
+export const everyActions: Action['type'][] = [
+    ...serverOnlyActions,
+];
+
 export type Action =
     JoinAction |
     LeaveAction;
@@ -45,7 +58,7 @@ export type Action =
 export interface JoinAction {
     type: 'join';
     id: string;
-    color: string;
+    color: PlayerColor;
 }
 
 export interface LeaveAction {
