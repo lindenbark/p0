@@ -32,7 +32,7 @@ async function connect(): Promise<[string, WebSocket]> {
 
 async function main() {
     const app: Application = new Application({ width: 800, height: 600 });
-    let gameState: GameState = createGameState({});;
+    let gameState: GameState = createGameState({});
     let scene: Graphics;
     const keyPressed: {[key: string]: boolean} = {};
     const [ currentPlayerId, ws ] = await connect();
@@ -53,7 +53,7 @@ async function main() {
     });
 
     function getCurrentPlayer(): Player | undefined {
-        return gameState.players.find(player => player.id === currentPlayerId);
+        return gameState.players[currentPlayerId];
     }
 
     function loop(delta: number) {
@@ -61,7 +61,7 @@ async function main() {
 
         scene.clear();
 
-        for (const player of gameState.players) {
+        for (const player of Object.values(gameState.players)) {
             scene.beginFill(player.color);
             scene.drawRect(player.position.x, player.position.y, 50, 50);
             scene.endFill();

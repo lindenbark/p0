@@ -21,10 +21,10 @@ export const createPlayer = (obj: Partial<Player>): Player => ({
 });
 
 export interface GameState {
-    players: Player[];
+    players: { [key: string]: Player };
 }
 export const createGameState = (obj: Partial<GameState>): GameState => ({
-    players: obj.players || [],
+    players: obj.players || {},
 });
 
 export function update(gameState: GameState, action: Action): GameState {
@@ -34,24 +34,30 @@ export function update(gameState: GameState, action: Action): GameState {
         case 'join':
             return {
                 ...gameState,
-                players: [...gameState.players, createPlayer({
-                    id: action.id,
-                    color: action.color,
-                })],
+                players: {
+                    ...gameState.players,
+                    [ action.id ]: createPlayer({
+                        id: action.id,
+                        color: action.color,
+                    }),
+                },
             };
         case 'move':
             return {
                 ...gameState,
-                players: [...gameState.players.filter(player => player.id !== action.id), createPlayer({
-                    id: action.id,
-                    position: action.posiiton,
-                })],
+                players: {
+                    ...gameState.players,
+                    [ action.id ]: createPlayer({
+                        ...gameState.players[action.id],
+                        position: action.posiiton,
+                    }),
+                },
             };
-        case 'leave':
-            return {
-                ...gameState,
-                players: gameState.players.filter(player => player.id !== action.id),
-            };
+        case 'leave': {
+            const players = { ...gameState.players };
+            delete players[action.id];
+            return { ...gameState, players };
+        }
     }
 }
 
