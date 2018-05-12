@@ -9,12 +9,15 @@ export const createGameEntity = (obj: Partial<GameEntity>): GameEntity => ({
 });
 
 export type PlayerColor = number;
+export type Position = {x: number, y: number};
 export interface Player extends GameEntity {
     color: PlayerColor;
+    position: Position;
 }
 export const createPlayer = (obj: Partial<Player>): Player => ({
     ...createGameEntity(obj),
     color: obj.color || 0,
+    position: obj.position || {x: 0, y: 0}
 });
 
 export interface GameState {
