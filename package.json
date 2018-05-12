@@ -1,0 +1,25 @@
+{
+  "name": "p0",
+  "version": "0.0.0",
+  "description": "first prototype",
+  "main": "index.js",
+  "scripts": {
+    "dev": "parcel src/client/index.html",
+    "start": "ts-node src/server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lindenbark/p0.git"
+  },
+  "author": "Team Lindenbark",
+  "license": "Zlib",
+  "bugs": {
+    "url": "https://github.com/lindenbark/p0/issues"
+  },
+  "homepage": "https://github.com/lindenbark/p0#readme",
+  "dependencies": {
+    "parcel-bundler": "^1.8.1",
+    "ts-node": "^6.0.3",
+    "typescript": "^2.8.3"
+  }
+}
