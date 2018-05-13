@@ -1,8 +1,9 @@
 FROM node:carbon as build-client
 WORKDIR /usr/src/app
-COPY . .
+COPY package*.json ./
 RUN npm install -g npm@6.0.1
 RUN npm install
+COPY . .
 RUN npm run build
 
 FROM abiosoft/caddy
