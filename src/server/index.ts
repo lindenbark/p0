@@ -42,7 +42,7 @@ wss.on('connection', (ws, req) => {
         broadcast(wss, ws, JSON.stringify(action));
     };
     doServerAction<JoinAction>({ type: 'join', id: query.id, color: (Math.random() * 0xffffff) & 0xefefef });
-    ws.send(JSON.stringify({ type: 'init', gameState }));
+    ws.send(JSON.stringify({ type: 'init', gameState }), noop);
     ws.on('close', () => {
         const id = idConnMap.id(ws);
         if (!id) return;
@@ -62,7 +62,7 @@ wss.on('connection', (ws, req) => {
         const rtts: number[] = [];
         const ping = () => {
             lastPing = Date.now();
-            ws.ping();
+            ws.ping('', false, noop);
         };
         const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
         ping();
@@ -102,3 +102,5 @@ http.createServer((req, res) => {
         console.log(`디버깅 서버: http://localhost:${ gameServerDebugPort }`);
     },
 );
+
+function noop() {}
