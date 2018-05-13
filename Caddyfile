@@ -1,4 +1,4 @@
-localhost:8080
+localhost:80
 
 gzip
 root /var/www/
