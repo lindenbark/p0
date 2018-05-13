@@ -13,4 +13,4 @@ services:
       context: .
       dockerfile: ./game-server.dockerfile
     ports:
-     - 10001:10001
+     - 10001-10010:10001-10010
