@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: ./game-client.dockerfile
+    restart: always
     ports:
       - 80:80
     volumes:
@@ -12,5 +13,6 @@ services:
     build:
       context: .
       dockerfile: ./game-server.dockerfile
+    restart: always
     ports:
      - 10001-10010:10001-10010
