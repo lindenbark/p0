@@ -1,5 +1,10 @@
 import 'pixi.js';
-import { Graphics, Application, Container } from 'pixi.js';
+import {
+    Graphics,
+    Application,
+} from 'pixi.js';
+import uuid from 'uuid/v4';
+
 import {
     GameState,
     Player,
@@ -9,12 +14,11 @@ import {
 } from '..';
 import { CloseReason } from '../ws';
 import { gameServerPort } from '../ports';
-import uuid from 'uuid/v4';
 
 async function connect(): Promise<[string, WebSocket]> {
     function tryConnect(id: string): Promise<WebSocket> {
         return new Promise((resolve, reject) => {
-            const ws = new WebSocket(`ws://localhost:${ gameServerPort }?id=${ id }`);
+            const ws = new WebSocket(`ws://${ location.hostname }:${ gameServerPort }?id=${ id }`);
             ws.addEventListener('open', () => resolve(ws));
             ws.addEventListener('onclose', e => reject((e as any).code));
         });
@@ -60,8 +64,8 @@ async function main() {
         return gameState.players[currentPlayerId];
     }
 
-    function loop(delta: number) {
-        handleMove();
+    function loop(timeDelta: number) {
+        handleMove(timeDelta);
 
         scene.clear();
 
@@ -77,11 +81,11 @@ async function main() {
         ws.send(JSON.stringify(action));
     }
 
-    function handleMove() {
+    function handleMove(timeDelta: number) {
         const currentPlayer = getCurrentPlayer();
         if (!currentPlayer) return;
 
-        const speed = 8;
+        const speed = 8 * timeDelta;
         const floorY = app.screen.height - playerSize * 2;
         const delta = {x: 0, y: 0};
 
@@ -96,7 +100,7 @@ async function main() {
             jumping = true;
         }
 
-        additionalDeltaY += gravity;
+        additionalDeltaY += gravity * timeDelta;
         delta.y += additionalDeltaY;
 
         const leftWallX = 0;
