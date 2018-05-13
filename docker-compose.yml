@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: ./game-client.dockerfile
     ports:
-      - "8080"
+      - 8080:8080
     volumes:
       - ./Caddyfile:/etc/Caddyfile
   game-server:
@@ -13,4 +13,4 @@ services:
       context: .
       dockerfile: ./game-server.dockerfile
     ports:
-     - "10001"
+     - 10001:10001
