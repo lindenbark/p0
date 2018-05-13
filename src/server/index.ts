@@ -1,3 +1,4 @@
+import * as http from 'http';
 import * as url from 'url';
 
 import * as WebSocket from 'ws';
@@ -19,10 +20,12 @@ import {
 import { CloseReason } from '../ws';
 import {
     gameServerPort,
+    gameServerDebugPort,
 } from '../ports';
 
 const wss = new WebSocket.Server({ port: gameServerPort });
 const idConnMap: IdConnMap = new IdConnMap();
+const connRttMap: WeakMap<WebSocket, number> = new WeakMap();
 let gameState: GameState = createGameState({});
 
 interface RequestQuery {
@@ -54,6 +57,48 @@ wss.on('connection', (ws, req) => {
         gameState = update(gameState, clientAction);
         broadcast(wss, ws, message);
     });
+    { // calc rtt
+        let lastPing: number;
+        const rtts: number[] = [];
+        const ping = () => {
+            lastPing = Date.now();
+            ws.ping();
+        };
+        const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+        ping();
+        ws.on('pong', () => {
+            const pong = Date.now();
+            if (rtts.length >= 10) rtts.shift();
+            rtts.push(pong - lastPing);
+            connRttMap.set(ws, avg(rtts));
+            setTimeout(ping, 100);
+        });
+    }
 });
 
-console.log(`서버 시작됐습니다: ws://localhost:${ gameServerPort }`);
+console.log(`게임 서버: ws://localhost:${ gameServerPort }`);
+
+const resMap: { [url: string]: () => object } = {
+    '/rtts': () => {
+        const result: { [id: string]: number | undefined } = {};
+        for (const id of idConnMap.ids()) {
+            result[id] = connRttMap.get(idConnMap.conn(id)!);
+        }
+        return result;
+    },
+};
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.write(
+        resMap[req.url!] ?
+        JSON.stringify(resMap[req.url!](), null, 4) :
+        'null',
+    );
+    res.end();
+}).listen(
+    gameServerDebugPort,
+    '0.0.0.0',
+    () => {
+        console.log(`디버깅 서버: http://localhost:${ gameServerDebugPort }`);
+    },
+);
