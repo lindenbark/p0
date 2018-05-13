@@ -1,0 +1,16 @@
+version: '3'
+services:
+  game-client:
+    build:
+      context: .
+      dockerfile: ./game-client.dockerfile
+    ports:
+      - "8080"
+    volumes:
+      - ./Caddyfile:/etc/Caddyfile
+  game-server:
+    build:
+      context: .
+      dockerfile: ./game-server.dockerfile
+    ports:
+     - "10001"

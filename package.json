@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "parcel src/client/index.html",
+    "build": "parcel build src/client/index.html",
     "start": "ts-node src/server"
   },
   "repository": {
