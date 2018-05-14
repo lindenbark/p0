@@ -7,8 +7,9 @@ services:
     restart: always
     ports:
       - 80:80
+      - 443:443
     volumes:
-      - ./Caddyfile-dev:/etc/Caddyfile
+      - ./Caddyfile-prod:/etc/Caddyfile
   game-server:
     build:
       context: .

@@ -8,4 +8,5 @@ RUN npm run build
 
 FROM abiosoft/caddy
 EXPOSE 80
+EXPOSE 443
 COPY --from=build-client /usr/src/app/dist /var/www/
