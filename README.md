@@ -21,5 +21,5 @@ npm run start # 서버
 su - docker
 cd p0
 git pull origin master
-docker-compose up -f docker-compose-prod.yml --build -d
+docker-compose -f docker-compose-prod.yml up --build -d
 ```
