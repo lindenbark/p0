@@ -1,4 +1,0 @@
-lindenbark.com {
-    gzip
-    root /var/www/
-}

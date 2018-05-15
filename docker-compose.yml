@@ -8,7 +8,7 @@ services:
     ports:
       - 80:80
     volumes:
-      - ./Caddyfile-dev:/etc/Caddyfile
+      - ./Caddyfile:/etc/Caddyfile
   game-server:
     build:
       context: .
