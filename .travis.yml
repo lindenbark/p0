@@ -1,0 +1,10 @@
+branches:
+  only:
+  - master
+
+sudo: true
+
+script:
+  - sudo apt-get update
+  - sudo apt-get install sshpass
+  - sshpass -p $PASSWORD ssh $USERNAME@$SERVER 'cd p0 && git pull origin master && docker-compose up --build -d'
