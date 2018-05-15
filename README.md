@@ -16,10 +16,4 @@ npm run start # 서버
 ```
 
 ## 실서버에 올리는 법
-```sh
-# vultr ssh 접속
-su - docker
-cd p0
-git pull origin master
-docker-compose up --build -d
-```
+master 브랜치에 커밋후 푸시하면 됩니다.
