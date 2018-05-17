@@ -8,3 +8,5 @@ script:
   - sudo apt-get update
   - sudo apt-get install sshpass
   - sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER 'cd p0 && git pull origin master && docker-compose up --build -d'
+  - |-
+    curl -d "{\"content\":\"\`${TRAVIS_COMMIT::7} - ${TRAVIS_COMMIT_MESSAGE}\` 배포되었습니다.\",\"username\":\"배포봇\"}" -H "Content-Type: application/json" -X POST $DISCORD_WEBHOOK_URL
