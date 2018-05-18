@@ -1,0 +1,19 @@
+@font-face {
+    font-family: 'NeoDunggeunmo';
+    src: url('./neodgm.ttf') format('truetype');
+    font-style: normal;
+    font-weight: normal;
+}
+#app {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+#debug-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-family: 'NeoDunggeunmo', monospace, sans-serif;
+    font-size: 12px;
+    pointer-events: none;
+}

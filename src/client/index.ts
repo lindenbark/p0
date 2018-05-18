@@ -35,7 +35,13 @@ async function connect(): Promise<[string, WebSocket]> {
 }
 
 async function main() {
-    const app: Application = new Application({ width: 650, height: 600 });
+    const view = document.getElementById('app') as HTMLCanvasElement;
+    const debugTextElement = document.getElementById('debug-text')!;
+    const app: Application = new Application({
+        width: 650,
+        height: 600,
+        view,
+    });
     const playerSize: number = 50;
     let gameState: GameState = createGameState({});
     let scene: Graphics;
@@ -44,13 +50,11 @@ async function main() {
     let jumping: boolean = false;
     const keyPressed: {[key: string]: boolean} = {};
     const [ currentPlayerId, ws ] = await connect();
-    console.log(currentPlayerId);
     ws.addEventListener('message', e => {
         const action = JSON.parse(e.data) as Action;
         gameState = update(gameState, action);
     });
     ws.addEventListener('close', e => console.error(e.code, e.reason));
-    document.body.appendChild(app.view);
     app.renderer.backgroundColor = 0xeeeeee;
     PIXI.loader.load(() => {
         scene = new Graphics();
@@ -65,15 +69,21 @@ async function main() {
     }
 
     function loop(timeDelta: number) {
-        handleMove(timeDelta);
-
+        const currentPlayer = getCurrentPlayer();
+        if (currentPlayer) {
+            handleMove(timeDelta, currentPlayer);
+        }
         scene.clear();
-
         for (const player of Object.values(gameState.players)) {
             scene.beginFill(player.color);
             scene.drawRect(player.position.x, player.position.y, playerSize, playerSize);
             scene.endFill();
         }
+        debugTextElement.innerText = currentPlayer ? [
+            `direction: ${ currentPlayer.direction }`,
+            `x: ${ currentPlayer.position.x }`,
+            `y: ${ currentPlayer.position.y }`,
+        ].join('\n') : '';
     }
 
     function updateGameState(action: Action) {
@@ -81,8 +91,7 @@ async function main() {
         ws.send(JSON.stringify(action));
     }
 
-    function handleMove(timeDelta: number) {
-        const currentPlayer = getCurrentPlayer();
+    function handleMove(timeDelta: number, currentPlayer: Player) {
         if (!currentPlayer) return;
 
         const speed = 8 * timeDelta;
@@ -148,4 +157,3 @@ async function main() {
 }
 
 main();
-console.log('hello, travis!');
