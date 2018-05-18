@@ -127,6 +127,15 @@ async function main() {
                 },
             });
         }
+        changeDirection: if (delta.x !== 0) {
+            const direction = (delta.x > 0) ? 'right' : 'left';
+            if (currentPlayer.direction === direction) break changeDirection;
+            updateGameState({
+                type: 'change-direction',
+                id: currentPlayerId,
+                direction,
+            });
+        }
     }
 
     function handleKeyDown(e: KeyboardEvent) {

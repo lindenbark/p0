@@ -9,18 +9,21 @@ export const createGameEntity = (obj: Partial<GameEntity>): GameEntity => ({
 });
 
 export type PlayerColor = number;
+export type Direction = 'left' | 'right';
 export interface Position {
     x: number;
     y: number;
 }
 export interface Player extends GameEntity {
     color: PlayerColor;
+    direction: Direction;
     position: Position;
 }
 export const createPlayer = (obj: Partial<Player>): Player => ({
     ...createGameEntity(obj),
     color: obj.color || 0,
-    position: obj.position || {x: 0, y: 0}
+    direction: obj.direction || 'right',
+    position: obj.position || {x: 0, y: 0},
 });
 
 export interface GameState {
@@ -45,6 +48,11 @@ export function update(gameState: GameState, action: Action): GameState {
                     }),
                 },
             };
+        case 'leave': {
+            const players = { ...gameState.players };
+            delete players[action.id];
+            return { ...gameState, players };
+        }
         case 'move':
             return {
                 ...gameState,
@@ -56,11 +64,17 @@ export function update(gameState: GameState, action: Action): GameState {
                     }),
                 },
             };
-        case 'leave': {
-            const players = { ...gameState.players };
-            delete players[action.id];
-            return { ...gameState, players };
-        }
+        case 'change-direction':
+            return {
+                ...gameState,
+                players: {
+                    ...gameState.players,
+                    [ action.id ]: createPlayer({
+                        ...gameState.players[action.id],
+                        direction: action.direction,
+                    }),
+                },
+            };
     }
 }
 
@@ -73,13 +87,15 @@ export const serverOnlyActions: Action['type'][] = [
 export const everyActions: Action['type'][] = [
     ...serverOnlyActions,
     'move',
+    'change-direction',
 ];
 
 export type Action =
     InitAction |
     JoinAction |
+    LeaveAction |
     MoveAction |
-    LeaveAction;
+    ChangeDirectionAction;
 
 export interface InitAction {
     type: 'init';
@@ -96,6 +112,12 @@ export interface MoveAction {
     type: 'move';
     id: string;
     posiiton: Position;
+}
+
+export interface ChangeDirectionAction {
+    type: 'change-direction';
+    id: string;
+    direction: Direction;
 }
 
 export interface LeaveAction {
