@@ -4,7 +4,7 @@
   "description": "first prototype",
   "main": "index.js",
   "scripts": {
-    "dev": "parcel src/client/index.html",
+    "dev": "concurrently --kill-others \"parcel src/client/index.html\" \"nodemon -w 'src' -e ts -x 'ts-node src/server'\"",
     "build": "parcel build src/client/index.html",
     "start": "ts-node src/server"
   },
@@ -22,6 +22,8 @@
     "@types/pixi.js": "^4.7.3",
     "@types/uuid": "^3.4.3",
     "@types/ws": "^5.1.1",
+    "concurrently": "^3.5.1",
+    "nodemon": "^1.17.4",
     "parcel-bundler": "^1.8.1",
     "pixi.js": "^4.7.3",
     "ts-node": "^6.0.3",
