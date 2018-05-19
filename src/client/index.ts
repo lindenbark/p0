@@ -69,10 +69,14 @@ async function main() {
     }
 
     function loop(timeDelta: number) {
+        const actions: Action[] = [];
+        const updateGameState = (action: Action) => {
+            gameState = update(gameState, action);
+            actions.push(action);
+        };
         const currentPlayer = getCurrentPlayer();
-        if (currentPlayer) {
-            handleMove(timeDelta, currentPlayer);
-        }
+        if (currentPlayer) handleMove(updateGameState, currentPlayer, timeDelta);
+        if (actions.length) ws.send(JSON.stringify(actions));
         scene.clear();
         for (const player of Object.values(gameState.players)) {
             scene.beginFill(player.color);
@@ -86,12 +90,11 @@ async function main() {
         ].join('\n') : '';
     }
 
-    function updateGameState(action: Action) {
-        gameState = update(gameState, action);
-        ws.send(JSON.stringify(action));
-    }
-
-    function handleMove(timeDelta: number, currentPlayer: Player) {
+    function handleMove(
+        updateGameState: (action: Action) => void,
+        currentPlayer: Player,
+        timeDelta: number,
+    ) {
         if (!currentPlayer) return;
 
         const speed = 8 * timeDelta;
@@ -130,7 +133,7 @@ async function main() {
             updateGameState({
                 type: 'move',
                 id: currentPlayerId,
-                posiiton: {
+                position: {
                     x: currentPlayer.position.x + delta.x,
                     y: currentPlayer.position.y + delta.y,
                 },

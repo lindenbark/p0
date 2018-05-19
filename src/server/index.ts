@@ -9,6 +9,7 @@ import {
     update,
     everyActions,
     serverOnlyActions,
+    isAction,
     Action,
     JoinAction,
     LeaveAction,
@@ -51,10 +52,15 @@ wss.on('connection', (ws, req) => {
     });
     ws.on('message', message => {
         if (typeof message !== 'string') return ws.close(CloseReason.INVALID_MESSAGE, '이 서버는 json 문자열만 받습니다.');
-        const clientAction = JSON.parse(message) as Action; // TODO: validate
-        if (!everyActions.includes(clientAction.type)) return ws.close(CloseReason.UNKNOWN_ACTION, '그런 액션 없습니다.');
-        if (serverOnlyActions.includes(clientAction.type)) return ws.close(CloseReason.NOT_ALLOWED_ACTION, '클라이언트는 해당 액션을 수행할 권한이 없습니다.');
-        gameState = update(gameState, clientAction);
+        const parsed = JSON.parse(message);
+        const actions = Array.isArray(parsed) ? parsed : [parsed];
+        for (const action of actions) { // validation
+            if (action == null || typeof action !== 'object') return ws.close(CloseReason.UNKNOWN_ACTION, '그런 액션 없습니다.');
+            if (!everyActions.includes(action.type)) return ws.close(CloseReason.UNKNOWN_ACTION, '그런 액션 없습니다.');
+            if (serverOnlyActions.includes(action.type)) return ws.close(CloseReason.NOT_ALLOWED_ACTION, '클라이언트는 해당 액션을 수행할 권한이 없습니다.');
+            if (!isAction(action)) return ws.close(CloseReason.UNKNOWN_ACTION, '그런 액션 없습니다.');
+        }
+        gameState = update(gameState, actions);
         broadcast(wss, ws, message);
     });
     { // calc rtt
