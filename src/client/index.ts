@@ -12,26 +12,14 @@ import {
     createGameState,
     Action,
 } from '..';
-import { CloseReason } from '../ws';
 import { gameServerPort } from '../ports';
 
-async function connect(): Promise<[string, WebSocket]> {
-    function tryConnect(id: string): Promise<WebSocket> {
-        return new Promise((resolve, reject) => {
-            const ws = new WebSocket(`ws://${ location.hostname }:${ gameServerPort }?id=${ id }`);
-            ws.addEventListener('open', () => resolve(ws));
-            ws.addEventListener('onclose', e => reject((e as any).code));
-        });
-    }
-    while (true) {
-        const id = uuid();
-        try {
-            return [id, await tryConnect(id)];
-        } catch (e) {
-            if (e === CloseReason.ALREADY_EXIST) continue;
-            throw e;
-        }
-    }
+function connect(): Promise<WebSocket> {
+    return new Promise((resolve, reject) => {
+        const ws = new WebSocket(`ws://${ location.hostname }:${ gameServerPort }?loginToken=${ uuid() }`);
+        ws.addEventListener('open', () => resolve(ws));
+        ws.addEventListener('onclose', e => reject((e as any).code));
+    });
 }
 
 async function main() {
@@ -49,10 +37,15 @@ async function main() {
     let additionalDeltaY: number = 0;
     let jumping: boolean = false;
     const keyPressed: {[key: string]: boolean} = {};
-    const [ currentPlayerId, ws ] = await connect();
+    const ws = await connect();
+    let currentPlayerId: string | null = null;
     ws.addEventListener('message', e => {
-        const action = JSON.parse(e.data) as Action;
-        gameState = update(gameState, action);
+        const action = JSON.parse(e.data) as (Action | Action[]);
+        gameState = update(gameState, action, action => {
+            if (action.type === 'id') {
+                currentPlayerId = action.id;
+            }
+        });
     });
     ws.addEventListener('close', e => console.error(e.code, e.reason));
     app.renderer.backgroundColor = 0xeeeeee;
@@ -64,8 +57,8 @@ async function main() {
         app.ticker.add(loop);
     });
 
-    function getCurrentPlayer(): Player | undefined {
-        return gameState.players[currentPlayerId];
+    function getCurrentPlayer(): Player | null {
+        return currentPlayerId ? gameState.players[currentPlayerId] : null;
     }
 
     function loop(timeDelta: number) {
@@ -132,7 +125,7 @@ async function main() {
         if (delta.x || delta.y) {
             updateGameState({
                 type: 'move',
-                id: currentPlayerId,
+                id: currentPlayerId!,
                 position: {
                     x: currentPlayer.position.x + delta.x,
                     y: currentPlayer.position.y + delta.y,
@@ -144,7 +137,7 @@ async function main() {
             if (currentPlayer.direction === direction) break changeDirection;
             updateGameState({
                 type: 'change-direction',
-                id: currentPlayerId,
+                id: currentPlayerId!,
                 direction,
             });
         }

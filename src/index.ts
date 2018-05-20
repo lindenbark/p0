@@ -52,15 +52,20 @@ export const isGameState = (obj: any): obj is GameState => {
     return (obj.players as Array<any>).every(player => isPlayer(player));
 };
 
-export function update(gameState: GameState, action: Action | Action[]): GameState {
+export function update(
+    gameState: GameState,
+    action: Action | Action[],
+    hook?: (action: Action) => void,
+): GameState {
     if (Array.isArray(action)) {
         let _gameState = gameState;
-        for (const a of action) _gameState = update(_gameState, a);
+        for (const a of action) _gameState = update(_gameState, a, hook);
         return _gameState;
     }
+    hook && hook(action);
     switch (action.type) {
-        case 'init':
-            return action.gameState;
+        case 'id': return gameState;
+        case 'init': return action.gameState;
         case 'join':
             return {
                 ...gameState,
@@ -103,6 +108,7 @@ export function update(gameState: GameState, action: Action | Action[]): GameSta
 }
 
 export const serverOnlyActions: Action['type'][] = [
+    'id',
     'init',
     'join',
     'leave',
@@ -115,6 +121,7 @@ export const everyActions: Action['type'][] = [
 ];
 
 export type Action =
+    IdAction |
     InitAction |
     JoinAction |
     LeaveAction |
@@ -122,12 +129,24 @@ export type Action =
     ChangeDirectionAction;
 export const isAction = (obj: any): obj is Action => {
     return (
+        isIdAction(obj) ||
         isInitAction(obj) ||
         isJoinAction(obj) ||
         isLeaveAction(obj) ||
         isMoveAction(obj) ||
         isChangeDirectionAction(obj)
     );
+};
+
+export interface IdAction {
+    type: 'id';
+    id: string;
+}
+export const isIdAction = (obj: any): obj is IdAction => {
+    if (obj == null || typeof obj !== 'object') return false;
+    if (obj.type !== 'id') return false;
+    if (typeof obj.id !== 'string') return false;
+    return true;
 };
 
 export interface InitAction {

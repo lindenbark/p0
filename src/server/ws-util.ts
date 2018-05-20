@@ -30,3 +30,10 @@ export class IdConnMap {
     conn(id: string): WebSocket | undefined { return this.idConnMap.get(id); }
     ids(): Iterable<string> { return this.idConnMap.keys(); }
 }
+
+export class ShortIdPool {
+    private counter: number = 0;
+    private pool: string[] = [];
+    get() { return this.pool.length ? this.pool.pop()! : `${ ++this.counter }`; }
+    release(id: string) { this.pool.push(id); }
+}

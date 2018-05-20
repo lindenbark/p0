@@ -16,6 +16,7 @@ import {
 } from '../index';
 import {
     IdConnMap,
+    ShortIdPool,
     broadcast,
 } from './ws-util';
 import { CloseReason } from '../ws';
@@ -25,28 +26,34 @@ import {
 } from '../ports';
 
 const wss = new WebSocket.Server({ port: gameServerPort });
+const shortIdPool: ShortIdPool = new ShortIdPool();
 const idConnMap: IdConnMap = new IdConnMap();
 const connRttMap: WeakMap<WebSocket, number> = new WeakMap();
 let gameState: GameState = createGameState({});
 
 interface RequestQuery {
-    id: string;
+    loginToken: string;
 }
 
 wss.on('connection', (ws, req) => {
     const requestUrl = url.parse(req.url || '/', true);
     const query = requestUrl.query as Partial<RequestQuery>;
-    if (!query.id) return ws.close(CloseReason.ALREADY_EXIST, '해당 id는 이미 접속되어 있습니다.');
-    idConnMap.set(query.id, ws);
+    console.log(query.loginToken); // TODO: 로그인 검증 및 사용자 정보 얻어내기
+    const id = shortIdPool.get();
+    idConnMap.set(id, ws);
     const doServerAction = <TAction extends Action>(action: TAction) => {
         gameState = update(gameState, action);
         broadcast(wss, ws, JSON.stringify(action));
     };
-    doServerAction<JoinAction>({ type: 'join', id: query.id, color: (Math.random() * 0xffffff) & 0xefefef });
-    ws.send(JSON.stringify({ type: 'init', gameState }), noop);
+    doServerAction<JoinAction>({ type: 'join', id, color: (Math.random() * 0xffffff) & 0xefefef });
+    ws.send(JSON.stringify([
+        { type: 'id', id },
+        { type: 'init', gameState },
+    ]), noop);
     ws.on('close', () => {
         const id = idConnMap.id(ws);
         if (!id) return;
+        shortIdPool.release(id);
         idConnMap.delete(id);
         doServerAction<LeaveAction>({ type: 'leave', id });
     });
