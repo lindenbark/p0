@@ -5,6 +5,7 @@ type Degree = number;
 type Pixel = number;
 type Count = number;
 type Url = string;
+type File = Url | ArrayBuffer;
 
 export interface L2d {
     version: 'p0';
@@ -22,36 +23,64 @@ export type L2dStatePlayType = L2dStatePlayTypeClamp;
 
 interface L2dStatePlayTypeBase<T> { type: T; }
 export interface L2dStatePlayTypeClamp extends L2dStatePlayTypeBase<'clamp'> {
-    loop?: Count; // default: no loop
+    loop?: Count; // default or zero: no loop, minus value: infinite loop
 }
 
 export interface L2dStateLayerKey<T> {
     t: Millisecond;
     v: T;
 }
-export interface L2dStateInterpolatableKey<T> extends L2dStateLayerKey<T> {
+export interface L2dStateLayerKeyInterpolatable<T> extends L2dStateLayerKey<T> {
     i?: 'nearest' | 'linear'; // quadratic bezier, cubic bezier, catmull rom, etc...
 }
-export type L2dStateLayer = L2dStateLayerSprite;
+export type L2dStateLayer =
+    L2dStateLayerSprite |
+    L2dStateLayerAtlas |
+    L2dStateLayerAabb;
 
-interface L2dStateLayerBase<T> { type: T; }
+interface L2dStateLayerBase<T> {
+    name: string;
+    type: T;
+}
+
 export interface L2dStateLayerSprite extends L2dStateLayerBase<'sprite'> {
     sprite: L2dStateLayerKey<L2dStateLayerSpriteKey>[];
-    x?: L2dStateInterpolatableKey<Pixel>[];
-    y?: L2dStateInterpolatableKey<Pixel>[];
-    skewX?: L2dStateInterpolatableKey<number>[];
-    skewY?: L2dStateInterpolatableKey<number>[];
-    scaleX?: L2dStateInterpolatableKey<number>[];
-    scaleY?: L2dStateInterpolatableKey<number>[];
-    rotation?: L2dStateInterpolatableKey<Degree>[];
+    x?: L2dStateLayerKeyInterpolatable<Pixel>[];
+    y?: L2dStateLayerKeyInterpolatable<Pixel>[];
+    skewX?: L2dStateLayerKeyInterpolatable<number>[];
+    skewY?: L2dStateLayerKeyInterpolatable<number>[];
+    scaleX?: L2dStateLayerKeyInterpolatable<number>[];
+    scaleY?: L2dStateLayerKeyInterpolatable<number>[];
+    rotation?: L2dStateLayerKeyInterpolatable<Degree>[];
 }
 
 export interface L2dStateLayerSpriteKey {
-    l: Url;
+    f: File;
     x: Pixel;
     y: Pixel;
     w: Pixel;
     h: Pixel;
+}
+
+export interface L2dStateLayerAtlas extends L2dStateLayerBase<'atlas'> {
+    file: File;
+    rect: L2dStateLayerKey<L2dStateLayerAtlasKey>[];
+    x?: L2dStateLayerKeyInterpolatable<Pixel>[];
+    y?: L2dStateLayerKeyInterpolatable<Pixel>[];
+    skewX?: L2dStateLayerKeyInterpolatable<number>[];
+    skewY?: L2dStateLayerKeyInterpolatable<number>[];
+    scaleX?: L2dStateLayerKeyInterpolatable<number>[];
+    scaleY?: L2dStateLayerKeyInterpolatable<number>[];
+    rotation?: L2dStateLayerKeyInterpolatable<Degree>[];
+}
+
+export interface L2dStateLayerAtlasKey {
+    x: Pixel;
+    y: Pixel;
+    t: Pixel; // top
+    l: Pixel; // left
+    r: Pixel; // right
+    b: Pixel; // bottom
 }
 
 export interface L2dStateLayerAabb extends L2dStateLayerBase<'aabb'> {
