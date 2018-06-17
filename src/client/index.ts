@@ -12,8 +12,48 @@ import {
     update,
     createGameState,
     Action,
+    getAttackRect,
 } from '..';
 import { gameServerPort } from '../ports';
+import { Rect } from '../model/geom/rectangle';
+
+type Effect = 
+    RectFadeOutEffect;
+
+type RectFadeOutEffect = {
+    type: 'rectFadeOut',
+    lifetime: number,
+    totalLifetime: number,
+    rect: Rect,
+    color: number,
+}
+
+abstract class TimeCounter {
+    constructor(protected origin: number, protected current: number) {
+    }
+
+    abstract update(timeDelta: number): void;
+    abstract get completed(): boolean;
+    abstract reset(): void;
+}
+
+class MinusTimeCounter extends TimeCounter{
+    constructor(origin:number, current?: number) {
+        super(origin, current || origin);
+    }
+
+    update(timeDelta: number) {
+        this.current -= timeDelta;
+    }
+
+    get completed() {
+        return this.current < 0;
+    }
+
+    reset() {
+        this.current = this.origin;
+    }
+}
 
 function connect(): Promise<WebSocket> {
     return new Promise((resolve, reject) => {
@@ -34,14 +74,16 @@ async function main() {
     const playerSize: number = 50;
     let gameState: GameState = createGameState({});
     let scene: Graphics;
-    const gravity: number = 2;
+    const gravity: number = 70;
     let additionalDeltaY: number = 0;
     let jumping: boolean = false;
-    const keyPressed: {[key: string]: boolean} = {};
+    const keyPressed: { [key: string]: boolean } = {};
     const ws = await connect();
     let currentPlayerId: string | null = null;
     let dead: boolean = false;
     const deadText: Text = new Text("You are dead. Press [R] to restart.", { fontFamily: "NeoDunggeunmo", fill: 0xffffff, fontSize: 24 });
+    let effects: Effect[] = [];
+    const attackCooltime: MinusTimeCounter = new MinusTimeCounter(0.5, 0);
 
     deadText.x = (app.screen.width - deadText.width) / 2;
     deadText.y = (app.screen.height - deadText.height) / 2;
@@ -61,6 +103,15 @@ async function main() {
                     scene.addChild(deadText);
                 }
             }
+            if (action.type === 'attack') {
+                setTimeout(() => effects.push({
+                    type: 'rectFadeOut',
+                    lifetime: 0.5,
+                    totalLifetime: 0.5,
+                    rect: getAttackRect(gameState.players[action.id]),
+                    color: 0xff0000
+                }), 500);
+            }
         });
     });
     ws.addEventListener('close', e => console.error(e.code, e.reason));
@@ -77,7 +128,8 @@ async function main() {
         return currentPlayerId ? gameState.players[currentPlayerId] : null;
     }
 
-    function loop(timeDelta: number) {
+    function loop() {
+        const timeDelta = 1 / app.ticker.FPS;
         const actions: Action[] = [];
         const updateGameState = (action: Action) => {
             gameState = update(gameState, action);
@@ -92,6 +144,18 @@ async function main() {
             scene.drawRect(player.position.x, player.position.y, playerSize, playerSize);
             scene.endFill();
         }
+        for (const effect of effects) {
+            if (effect.type === 'rectFadeOut') {
+                scene.beginFill(effect.color, 0.5 * (effect.lifetime / effect.totalLifetime));
+                scene.drawRect(effect.rect.x, effect.rect.y, effect.rect.width, effect.rect.height);
+                scene.endFill();
+            }
+
+            effect.lifetime -= timeDelta;
+        }
+
+        effects = effects.filter(effect => effect.lifetime > 0);
+
         if (dead) {
             scene.beginFill(0, 0.5);
             scene.drawRect(0, 0, app.screen.width, app.screen.height);
@@ -102,6 +166,7 @@ async function main() {
             }
         }
         debugTextElement.innerText = currentPlayer ? [
+            `fps: ${ app.ticker.FPS }`,
             `direction: ${ currentPlayer.direction }`,
             `x: ${ currentPlayer.position.x }`,
             `y: ${ currentPlayer.position.y }`,
@@ -115,9 +180,11 @@ async function main() {
     ) {
         if (!currentPlayer) return;
 
-        const speed = 8 * timeDelta;
+        const speed = 500 * timeDelta;
         const floorY = app.screen.height - playerSize * 2;
-        const delta = {x: 0, y: 0};
+        const delta = { x: 0, y: 0 };
+
+        attackCooltime.update(timeDelta);
 
         if (keyPressed['ArrowLeft']) {
             delta.x -= speed;
@@ -126,14 +193,24 @@ async function main() {
             delta.x += speed;
         }
         if (keyPressed['ArrowUp'] && !jumping) {
-            additionalDeltaY = -25;
+            additionalDeltaY = -20;
             jumping = true;
         }
-        if (keyPressed['KeyX']) {
+        if (attackCooltime.completed && keyPressed['KeyX']) {
             updateGameState({
                 type: 'attack',
                 id: currentPlayerId!,
             });
+
+            setTimeout(() => effects.push({
+                type: 'rectFadeOut',
+                lifetime: 0.5,
+                totalLifetime: 0.5,
+                rect: getAttackRect(gameState.players[currentPlayerId!]),
+                color: 0xff0000
+            }), 500);
+
+            attackCooltime.reset();
         }
 
         additionalDeltaY += gravity * timeDelta;
