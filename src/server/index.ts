@@ -11,11 +11,7 @@ import {
     serverOnlyActions,
     isAction,
     Action,
-    JoinAction,
-    LeaveAction,
     testHit,
-    HitAction,
-    DieAction,
 } from '../index';
 import {
     IdConnMap,
@@ -48,7 +44,7 @@ wss.on('connection', (ws, req) => {
         gameState = update(gameState, action);
         broadcast(wss, ws, JSON.stringify(action));
     };
-    doServerAction<JoinAction>({ type: 'join', id, color: (Math.random() * 0xffffff) & 0xefefef });
+    doServerAction({ type: 'join', id, color: (Math.random() * 0xffffff) & 0xefefef });
     ws.send(JSON.stringify([
         { type: 'id', id },
         { type: 'init', gameState },
@@ -58,7 +54,7 @@ wss.on('connection', (ws, req) => {
         if (!id) return;
         shortIdPool.release(id);
         idConnMap.delete(id);
-        doServerAction<LeaveAction>({ type: 'leave', id });
+        doServerAction({ type: 'leave', id });
     });
     ws.on('message', message => {
         if (typeof message !== 'string') return ws.close(CloseReason.INVALID_MESSAGE, '이 서버는 json 문자열만 받습니다.');
@@ -77,10 +73,10 @@ wss.on('connection', (ws, req) => {
                         const playerHit = testHit(gameState, action.id);
 
                         if (playerHit != null) {
-                            playerHit && doServerAction<HitAction>({ type: 'hit', id: playerHit });
+                            playerHit && doServerAction({ type: 'hit', id: playerHit });
 
                             // 한 대 맞으면 죽는다
-                            doServerAction<DieAction>({ type: 'die', id: playerHit });
+                            doServerAction({ type: 'die', id: playerHit });
                         }
                     }, 500);
             }
