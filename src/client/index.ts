@@ -108,7 +108,7 @@ async function main() {
                     lifetimeCounter: new MinusTimeCounter(0.5),
                     rect: getAttackRect(gameState.players[action.id]),
                     color: 0xff0000
-                }), 500);
+                }), 200);
             }
         });
     });
@@ -205,7 +205,7 @@ async function main() {
                 lifetimeCounter: new MinusTimeCounter(0.5),
                 rect: getAttackRect(gameState.players[currentPlayerId!]),
                 color: 0xff0000
-            }), 500);
+            }), 200);
 
             attackCooltime.reset();
         }

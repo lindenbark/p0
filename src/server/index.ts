@@ -78,7 +78,7 @@ wss.on('connection', (ws, req) => {
                             // 한 대 맞으면 죽는다
                             doServerAction({ type: 'die', id: playerHit });
                         }
-                    }, 500);
+                    }, 200);
             }
         });
         broadcast(wss, ws, message);
