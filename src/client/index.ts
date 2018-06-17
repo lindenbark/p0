@@ -96,7 +96,7 @@ async function main() {
             scene.beginFill(0, 0.5);
             scene.drawRect(0, 0, app.screen.width, app.screen.height);
             scene.endFill();
-            if (keyPressed['r']) {
+            if (keyPressed['KeyR']) {
                 // HACK
                 location.reload();
             }
@@ -129,7 +129,7 @@ async function main() {
             additionalDeltaY = -25;
             jumping = true;
         }
-        if (keyPressed['x']) {
+        if (keyPressed['KeyX']) {
             updateGameState({
                 type: 'attack',
                 id: currentPlayerId!,
@@ -175,11 +175,11 @@ async function main() {
     }
 
     function handleKeyDown(e: KeyboardEvent) {
-        keyPressed[e.key] = true;
+        keyPressed[e.code] = true;
     }
 
     function handleKeyUp(e: KeyboardEvent) {
-        keyPressed[e.key] = false;
+        keyPressed[e.code] = false;
     }
 }
 
