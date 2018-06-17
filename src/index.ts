@@ -153,15 +153,18 @@ export function update(
     }
 }
 
-export function testHit(gameState: GameState, attackerId: string): string | null {
-    const attacker = gameState.players[attackerId];
-
-    const attackRect: Rect = {
+export function getAttackRect(attacker:Player) {
+    return {
         x: attacker.position.x + (attacker.direction === 'left' ? -50 : 50),
         y: attacker.position.y,
         width: 50,
         height: 50
     }
+}
+
+export function testHit(gameState: GameState, attackerId: string): string | null {
+    const attacker = gameState.players[attackerId];
+    const attackRect = getAttackRect(attacker);
 
     for (const otherPlayer of Object.values(gameState.players)) {
         if (otherPlayer.id === attackerId) continue;
