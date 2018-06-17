@@ -1,4 +1,5 @@
 import * as uuid from 'uuid/v4';
+import { Rect, intersectRect } from './model/geom/rectangle';
 
 export interface GameEntity {
     id: string; // uuid
@@ -21,16 +22,28 @@ export const isPosition = (obj: any): obj is Position => {
     if (typeof obj.y !== 'number') return false;
     return true;
 };
+export type AnimationState = 'idle' | 'move' | 'attack' | 'hit' | 'die';
+export const isAnimationState = (obj: any): obj is AnimationState => {
+    return (
+        obj === 'idle' ||
+        obj === 'move' ||
+        obj === 'attack' ||
+        obj === 'hit' ||
+        obj === 'die'
+    );
+}
 export interface Player extends GameEntity {
     color: PlayerColor;
     direction: Direction;
     position: Position;
+    animationState: AnimationState;
 }
 export const createPlayer = (obj: Partial<Player>): Player => ({
     ...createGameEntity(obj),
     color: obj.color || 0,
     direction: obj.direction || 'right',
     position: obj.position || {x: 0, y: 0},
+    animationState: 'idle',
 });
 export const isPlayer = (obj: any): obj is Player => {
     if (obj == null || typeof obj !== 'object') return false;
@@ -104,7 +117,65 @@ export function update(
                     }),
                 },
             };
+        case 'attack':
+            return {
+                ...gameState,
+                players: {
+                    ...gameState.players,
+                    [ action.id ]: createPlayer({
+                        ...gameState.players[action.id],
+                        animationState: 'attack',
+                    })
+                }
+            };
+        case 'hit':
+            return {
+                ...gameState,
+                players: {
+                    ...gameState.players,
+                    [ action.id ]: createPlayer({
+                        ...gameState.players[action.id],
+                        animationState: 'hit',
+                    })
+                }
+            };
+        case 'die':
+            return {
+                ...gameState,
+                players: {
+                    ...gameState.players,
+                    [ action.id ]: createPlayer({
+                        ...gameState.players[action.id],
+                        animationState: 'die',
+                    })
+                }
+            };
     }
+}
+
+export function testHit(gameState: GameState, attackerId: string): string | null {
+    const attacker = gameState.players[attackerId];
+
+    const attackRect: Rect = {
+        x: attacker.position.x + (attacker.direction === 'left' ? -50 : 50),
+        y: attacker.position.y,
+        width: 50,
+        height: 50
+    }
+
+    for (const otherPlayer of Object.values(gameState.players)) {
+        if (otherPlayer.id === attackerId) continue;
+
+        const otherPlayerRect: Rect = {
+            ...otherPlayer.position,
+            width: 50,
+            height: 50,
+        }
+        if (intersectRect(attackRect, otherPlayerRect)) {
+            return otherPlayer.id;
+        }
+    }
+    return null;
 }
 
 export const serverOnlyActions: Action['type'][] = [
@@ -112,12 +183,15 @@ export const serverOnlyActions: Action['type'][] = [
     'init',
     'join',
     'leave',
+    'hit',
+    'die',
 ];
 
 export const everyActions: Action['type'][] = [
     ...serverOnlyActions,
     'move',
     'change-direction',
+    'attack',
 ];
 
 export type Action =
@@ -126,7 +200,10 @@ export type Action =
     JoinAction |
     LeaveAction |
     MoveAction |
-    ChangeDirectionAction;
+    ChangeDirectionAction |
+    AttackAction |
+    HitAction |
+    DieAction;
 export const isAction = (obj: any): obj is Action => {
     return (
         isIdAction(obj) ||
@@ -134,7 +211,10 @@ export const isAction = (obj: any): obj is Action => {
         isJoinAction(obj) ||
         isLeaveAction(obj) ||
         isMoveAction(obj) ||
-        isChangeDirectionAction(obj)
+        isChangeDirectionAction(obj) ||
+        isAttackAction(obj) ||
+        isHitAction(obj) ||
+        isDieAction(obj)
     );
 };
 
@@ -207,5 +287,38 @@ export const isChangeDirectionAction = (obj: any): obj is ChangeDirectionAction 
     if (obj.type !== 'change-direction') return false;
     if (typeof obj.id !== 'string') return false;
     if (!isDirection(obj.direction)) return false;
+    return true;
+};
+
+export interface AttackAction {
+    type: 'attack';
+    id: string;
+}
+export const isAttackAction = (obj: any): obj is AttackAction => {
+    if (obj == null || typeof obj !== 'object') return false;
+    if (obj.type !== 'attack') return false;
+    if (typeof obj.id !== 'string') return false;
+    return true;
+};
+
+export interface HitAction {
+    type: 'hit';
+    id: string;
+}
+export const isHitAction = (obj: any): obj is HitAction => {
+    if (obj == null || typeof obj !== 'object') return false;
+    if (obj.type !== 'hit') return false;
+    if (typeof obj.id !== 'string') return false;
+    return true;
+};
+
+export interface DieAction {
+    type: 'die';
+    id: string;
+}
+export const isDieAction = (obj: any): obj is DieAction => {
+    if (obj == null || typeof obj !== 'object') return false;
+    if (obj.type !== 'die') return false;
+    if (typeof obj.id !== 'string') return false;
     return true;
 };

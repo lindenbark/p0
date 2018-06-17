@@ -2,6 +2,7 @@ import 'pixi.js';
 import {
     Graphics,
     Application,
+    Text,
 } from 'pixi.js';
 import uuid from 'uuid/v4';
 
@@ -39,11 +40,26 @@ async function main() {
     const keyPressed: {[key: string]: boolean} = {};
     const ws = await connect();
     let currentPlayerId: string | null = null;
+    let dead: boolean = false;
+    const deadText: Text = new Text("You are dead. Press [R] to restart.", { fontFamily: "NeoDunggeunmo", fill: 0xffffff, fontSize: 24 });
+
+    deadText.x = (app.screen.width - deadText.width) / 2;
+    deadText.y = (app.screen.height - deadText.height) / 2;
+
     ws.addEventListener('message', e => {
         const action = JSON.parse(e.data) as (Action | Action[]);
         gameState = update(gameState, action, action => {
             if (action.type === 'id') {
                 currentPlayerId = action.id;
+            }
+            if (action.type === "hit") {
+                console.log('hit : ', action.id);
+            }
+            if (action.type === "die") {
+                if (currentPlayerId == action.id) {
+                    dead = true;
+                    scene.addChild(deadText);
+                }
             }
         });
     });
@@ -68,13 +84,22 @@ async function main() {
             actions.push(action);
         };
         const currentPlayer = getCurrentPlayer();
-        if (currentPlayer) handleMove(updateGameState, currentPlayer, timeDelta);
+        if (!dead && currentPlayer) handlePlayerUpdate(updateGameState, currentPlayer, timeDelta);
         if (actions.length) ws.send(JSON.stringify(actions));
         scene.clear();
         for (const player of Object.values(gameState.players)) {
             scene.beginFill(player.color);
             scene.drawRect(player.position.x, player.position.y, playerSize, playerSize);
             scene.endFill();
+        }
+        if (dead) {
+            scene.beginFill(0, 0.5);
+            scene.drawRect(0, 0, app.screen.width, app.screen.height);
+            scene.endFill();
+            if (keyPressed['r']) {
+                // HACK
+                location.reload();
+            }
         }
         debugTextElement.innerText = currentPlayer ? [
             `direction: ${ currentPlayer.direction }`,
@@ -83,7 +108,7 @@ async function main() {
         ].join('\n') : '';
     }
 
-    function handleMove(
+    function handlePlayerUpdate(
         updateGameState: (action: Action) => void,
         currentPlayer: Player,
         timeDelta: number,
@@ -103,6 +128,12 @@ async function main() {
         if (keyPressed['ArrowUp'] && !jumping) {
             additionalDeltaY = -25;
             jumping = true;
+        }
+        if (keyPressed['x']) {
+            updateGameState({
+                type: 'attack',
+                id: currentPlayerId!,
+            });
         }
 
         additionalDeltaY += gravity * timeDelta;

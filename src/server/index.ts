@@ -13,6 +13,9 @@ import {
     Action,
     JoinAction,
     LeaveAction,
+    testHit,
+    HitAction,
+    DieAction,
 } from '../index';
 import {
     IdConnMap,
@@ -67,7 +70,21 @@ wss.on('connection', (ws, req) => {
             if (serverOnlyActions.includes(action.type)) return ws.close(CloseReason.NOT_ALLOWED_ACTION, '클라이언트는 해당 액션을 수행할 권한이 없습니다.');
             if (!isAction(action)) return ws.close(CloseReason.UNKNOWN_ACTION, '그런 액션 없습니다.');
         }
-        gameState = update(gameState, actions);
+        gameState = update(gameState, actions, action => {
+            switch (action.type) {
+                case 'attack':
+                    setTimeout(() => {
+                        const playerHit = testHit(gameState, action.id);
+
+                        if (playerHit != null) {
+                            playerHit && doServerAction<HitAction>({ type: 'hit', id: playerHit });
+
+                            // 한 대 맞으면 죽는다
+                            doServerAction<DieAction>({ type: 'die', id: playerHit });
+                        }
+                    }, 500);
+            }
+        });
         broadcast(wss, ws, message);
     });
     { // calc rtt
