@@ -22,14 +22,13 @@ type Effect =
 
 type RectFadeOutEffect = {
     type: 'rectFadeOut',
-    lifetime: number,
-    totalLifetime: number,
+    lifetimeCounter: TimeCounter,
     rect: Rect,
     color: number,
 }
 
 abstract class TimeCounter {
-    constructor(protected origin: number, protected current: number) {
+    constructor(public origin: number, public current: number) {
     }
 
     abstract update(timeDelta: number): void;
@@ -106,8 +105,7 @@ async function main() {
             if (action.type === 'attack') {
                 setTimeout(() => effects.push({
                     type: 'rectFadeOut',
-                    lifetime: 0.5,
-                    totalLifetime: 0.5,
+                    lifetimeCounter: new MinusTimeCounter(0.5),
                     rect: getAttackRect(gameState.players[action.id]),
                     color: 0xff0000
                 }), 500);
@@ -146,15 +144,15 @@ async function main() {
         }
         for (const effect of effects) {
             if (effect.type === 'rectFadeOut') {
-                scene.beginFill(effect.color, 0.5 * (effect.lifetime / effect.totalLifetime));
+                scene.beginFill(effect.color, 0.5 * (effect.lifetimeCounter.current / effect.lifetimeCounter.origin));
                 scene.drawRect(effect.rect.x, effect.rect.y, effect.rect.width, effect.rect.height);
                 scene.endFill();
             }
 
-            effect.lifetime -= timeDelta;
+            effect.lifetimeCounter.update(timeDelta);
         }
 
-        effects = effects.filter(effect => effect.lifetime > 0);
+        effects = effects.filter(effect => !effect.lifetimeCounter.completed);
 
         if (dead) {
             scene.beginFill(0, 0.5);
@@ -204,8 +202,7 @@ async function main() {
 
             setTimeout(() => effects.push({
                 type: 'rectFadeOut',
-                lifetime: 0.5,
-                totalLifetime: 0.5,
+                lifetimeCounter: new MinusTimeCounter(0.5),
                 rect: getAttackRect(gameState.players[currentPlayerId!]),
                 color: 0xff0000
             }), 500);
